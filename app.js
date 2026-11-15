@@ -97,6 +97,10 @@ const el = {
     btnOpenLoginModal: document.getElementById('btnOpenLoginModal'),
     loginModal: document.getElementById('loginModal'),
     btnCloseModal: document.getElementById('btnCloseModal'),
+    inputEmail: document.getElementById('inputEmail'),
+    inputPassword: document.getElementById('inputPassword'),
+    btnSubmitCredentials: document.getElementById('btnSubmitCredentials'),
+    loginStatusMsg: document.getElementById('loginStatusMsg'),
     inputSSID: document.getElementById('inputSSID'),
     inputGatewayUrl: document.getElementById('inputGatewayUrl'),
     btnSubmitSSID: document.getElementById('btnSubmitSSID'),
@@ -767,6 +771,81 @@ function setupEventListeners() {
         el.btnCloseModal.onclick = () => el.loginModal.classList.add('hidden');
     }
 
+    // Submit Credentials (Email & Password Login)
+    if (el.btnSubmitCredentials) {
+        el.btnSubmitCredentials.onclick = async () => {
+            const email = el.inputEmail ? el.inputEmail.value.trim() : "";
+            const password = el.inputPassword ? el.inputPassword.value.trim() : "";
+            const gw = el.inputGatewayUrl ? el.inputGatewayUrl.value.trim() : "https://pohlor-iq.pohlor27.workers.dev";
+
+            if (!email || !password) {
+                if (el.loginStatusMsg) {
+                    el.loginStatusMsg.innerText = "กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน";
+                    el.loginStatusMsg.classList.remove('hidden');
+                }
+                return;
+            }
+
+            if (el.loginStatusMsg) {
+                el.loginStatusMsg.innerText = "กำลังเข้าสู่ระบบ IQ Option...";
+                el.loginStatusMsg.className = "text-xs text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 p-2.5 rounded-xl font-mono";
+                el.loginStatusMsg.classList.remove('hidden');
+            }
+
+            try {
+                let apiUrl = "/api/login";
+                if (gw && gw.startsWith("http")) {
+                    const gwOrigin = new URL(gw).origin;
+                    apiUrl = `${gwOrigin}/api/login`;
+                }
+
+                console.log(`[App] Calling Auth API: ${apiUrl}`);
+                const resp = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await resp.json();
+                console.log("[App] Auth API Response:", data);
+
+                if (data.code === "success" && (data.ssid || (data.data && data.data.ssid))) {
+                    const freshSSID = data.ssid || (data.data && data.data.ssid);
+                    if (el.loginStatusMsg) {
+                        el.loginStatusMsg.innerText = `เข้าสู่ระบบสำเร็จ! (User ID: ${data.user_id || (data.data && data.data.user_id)})`;
+                        el.loginStatusMsg.className = "text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl font-mono";
+                    }
+                    if (typeof localStorage !== 'undefined') {
+                        localStorage.setItem('pohlor_iq_email', email);
+                        localStorage.setItem('pohlor_iq_ssid', freshSSID);
+                        localStorage.setItem('pohlor_ws_gateway', gw);
+                    }
+                    if (el.inputSSID) el.inputSSID.value = freshSSID;
+
+                    window.iqDirectClient.connect(freshSSID, state.accountMode, gw);
+
+                    setTimeout(() => {
+                        el.loginModal.classList.add('hidden');
+                        if (el.loginStatusMsg) el.loginStatusMsg.classList.add('hidden');
+                    }, 1200);
+                } else {
+                    const err = data.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือต้องยืนยัน 2FA";
+                    if (el.loginStatusMsg) {
+                        el.loginStatusMsg.innerText = `เกิดข้อผิดพลาด: ${err}`;
+                        el.loginStatusMsg.className = "text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl font-mono";
+                    }
+                }
+            } catch (err) {
+                console.error("[App] Login error:", err);
+                if (el.loginStatusMsg) {
+                    el.loginStatusMsg.innerText = `ไม่สามารถเชื่อมต่อ Gateway: ${err.message}`;
+                    el.loginStatusMsg.className = "text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl font-mono";
+                }
+            }
+        };
+    }
+
+    // Submit Manual SSID
     if (el.btnSubmitSSID) {
         el.btnSubmitSSID.onclick = () => {
             const val = el.inputSSID.value.trim();
@@ -838,8 +917,10 @@ function bootstrap() {
 
     // Auto connect direct to IQ Option
     console.log("[App] Initializing Direct IQ Option WebSocket session...");
+    const activeEmail = (typeof localStorage !== 'undefined' && localStorage.getItem('pohlor_iq_email')) || "pohlor185@gmail.com";
     const activeSSID = (typeof localStorage !== 'undefined' && localStorage.getItem('pohlor_iq_ssid')) || "9f5f3aea7d7037a7b1f118ea1932028p";
-    const activeGateway = (typeof localStorage !== 'undefined' && localStorage.getItem('pohlor_ws_gateway')) || "";
+    const activeGateway = (typeof localStorage !== 'undefined' && localStorage.getItem('pohlor_ws_gateway')) || "https://pohlor-iq.pohlor27.workers.dev";
+    if (el.inputEmail) el.inputEmail.value = activeEmail;
     if (el.inputSSID) el.inputSSID.value = activeSSID;
     if (el.inputGatewayUrl) el.inputGatewayUrl.value = activeGateway;
     window.iqDirectClient.connect(activeSSID, "PRACTICE", activeGateway);

@@ -384,29 +384,51 @@
             </div>
 
             <div class="space-y-3">
-                <div class="bg-cyan-950/20 border border-cyan-500/30 rounded-xl p-3 text-[11px] text-cyan-200 leading-relaxed">
-                    <span class="font-bold text-cyan-300">💡 เชื่อมต่อตรงโดยไม่ผ่านเซิร์ฟเวอร์คนกลาง:</span><br>
-                    ระบบเชื่อมต่อไปยัง <code>wss://iqoption.com/echo/websocket</code> โดยตรงจากเบราว์เซอร์ของคุณ ปลอดภัย ข้อมูลไม่ผ่านเซิร์ฟเวอร์ภายนอกใดๆ
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">SSID Session Token</label>
-                    <input id="inputSSID" type="text" value="9f5f3aea7d7037a7b1f118ea1932028p" placeholder="วางค่า ssid ที่นี่..." class="w-full bg-[#0a0d14] border border-[#26334d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
-                </div>
-
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="block text-xs font-semibold text-slate-300">Cloudflare Worker Gateway URL</label>
-                        <span class="text-[10px] text-emerald-400 font-mono">แก้ Origin บล็อก</span>
+                <!-- Credentials Login (Recommended & Friction-Free) -->
+                <div class="bg-gradient-to-r from-emerald-950/30 to-teal-950/20 border border-emerald-500/30 rounded-xl p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-emerald-400">🔑 เข้าสู่ระบบด้วย อีเมล / รหัสผ่าน</span>
+                        <span class="text-[10px] text-emerald-300 font-mono">แนะนำ</span>
                     </div>
-                    <input id="inputGatewayUrl" type="text" placeholder="เช่น https://pohlor-iq.xxxx.workers.dev" class="w-full bg-[#0a0d14] border border-[#26334d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">อีเมล IQ Option</label>
+                        <input id="inputEmail" type="email" value="pohlor185@gmail.com" placeholder="อีเมล IQ Option" class="w-full bg-[#0a0d14] border border-[#26334d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">รหัสผ่าน IQ Option</label>
+                        <input id="inputPassword" type="password" value="zzzz0000" placeholder="รหัสผ่าน" class="w-full bg-[#0a0d14] border border-[#26334d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono">
+                    </div>
+
+                    <div id="loginStatusMsg" class="hidden text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl font-mono"></div>
+
+                    <button type="button" id="btnSubmitCredentials" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition cursor-pointer">
+                        🚀 เข้าสู่ระบบ IQ Option ทันที
+                    </button>
                 </div>
 
-                <div id="ssidErrorMsg" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl"></div>
+                <!-- Advanced Settings Toggle -->
+                <details class="text-xs text-slate-400 bg-[#0a0d14] border border-[#26334d] rounded-xl p-3">
+                    <summary class="cursor-pointer font-semibold text-slate-300 hover:text-white select-none">⚙️ ตั้งค่าขั้นสูง (SSID Token / Cloudflare Gateway)</summary>
+                    <div class="mt-3 space-y-3 pt-2 border-t border-[#1e293b]">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Cloudflare Worker Gateway URL</label>
+                            <input id="inputGatewayUrl" type="text" value="https://pohlor-iq.pohlor27.workers.dev" placeholder="เช่น https://pohlor-iq.pohlor27.workers.dev" class="w-full bg-[#111726] border border-[#26334d] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
+                        </div>
 
-                <button type="button" id="btnSubmitSSID" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold text-sm shadow-lg shadow-emerald-500/20 transition">
-                    เชื่อมต่อ IQ Option โดยตรงทันที
-                </button>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 mb-1">SSID Session Token (กรอกเอง)</label>
+                            <input id="inputSSID" type="text" value="9f5f3aea7d7037a7b1f118ea1932028p" placeholder="วางค่า ssid ที่นี่..." class="w-full bg-[#111726] border border-[#26334d] rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
+                        </div>
+
+                        <div id="ssidErrorMsg" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2 rounded-xl"></div>
+
+                        <button type="button" id="btnSubmitSSID" class="w-full py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-semibold text-xs transition">
+                            เชื่อมต่อด้วย SSID โดยตรง
+                        </button>
+                    </div>
+                </details>
             </div>
         </div>
     </div>
