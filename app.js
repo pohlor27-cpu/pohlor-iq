@@ -98,6 +98,7 @@ const el = {
     loginModal: document.getElementById('loginModal'),
     btnCloseModal: document.getElementById('btnCloseModal'),
     inputSSID: document.getElementById('inputSSID'),
+    inputGatewayUrl: document.getElementById('inputGatewayUrl'),
     btnSubmitSSID: document.getElementById('btnSubmitSSID'),
     ssidErrorMsg: document.getElementById('ssidErrorMsg'),
 };
@@ -769,8 +770,13 @@ function setupEventListeners() {
     if (el.btnSubmitSSID) {
         el.btnSubmitSSID.onclick = () => {
             const val = el.inputSSID.value.trim();
+            const gw = el.inputGatewayUrl ? el.inputGatewayUrl.value.trim() : "";
             if (val) {
-                window.iqDirectClient.connect(val, state.accountMode);
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('pohlor_iq_ssid', val);
+                    localStorage.setItem('pohlor_ws_gateway', gw);
+                }
+                window.iqDirectClient.connect(val, state.accountMode, gw);
                 el.loginModal.classList.add('hidden');
             }
         };
@@ -795,10 +801,18 @@ function bootstrap() {
         if (ok) {
             el.connectionLabel.innerText = `เชื่อมต่อแล้ว (${window.iqDirectClient.userName})`;
             el.connectionDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400';
+            if (el.ssidErrorMsg) el.ssidErrorMsg.classList.add('hidden');
             loadChartData(state.selectedPair, state.timeframe);
         } else {
             el.connectionLabel.innerText = msg;
             el.connectionDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500';
+            if (msg.includes('SSID') && el.loginModal) {
+                if (el.ssidErrorMsg) {
+                    el.ssidErrorMsg.innerText = `${msg} กรุณาระบุ SSID ใหม่ที่ยังไม่หมดอายุ`;
+                    el.ssidErrorMsg.classList.remove('hidden');
+                }
+                el.loginModal.classList.remove('hidden');
+            }
         }
     };
 
@@ -824,7 +838,11 @@ function bootstrap() {
 
     // Auto connect direct to IQ Option
     console.log("[App] Initializing Direct IQ Option WebSocket session...");
-    window.iqDirectClient.connect("43ff449f35042fbbe8b3531590df3e5h", "PRACTICE");
+    const activeSSID = (typeof localStorage !== 'undefined' && localStorage.getItem('pohlor_iq_ssid')) || "9f5f3aea7d7037a7b1f118ea1932028p";
+    const activeGateway = (typeof localStorage !== 'undefined' && localStorage.getItem('pohlor_ws_gateway')) || "";
+    if (el.inputSSID) el.inputSSID.value = activeSSID;
+    if (el.inputGatewayUrl) el.inputGatewayUrl.value = activeGateway;
+    window.iqDirectClient.connect(activeSSID, "PRACTICE", activeGateway);
 
     startClientScanner();
 }

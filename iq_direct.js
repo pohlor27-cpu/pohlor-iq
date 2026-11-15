@@ -8,7 +8,11 @@ class IQOptionDirectClient {
     constructor() {
         this.ws = null;
         this.isConnected = false;
-        this.ssid = "43ff449f35042fbbe8b3531590df3e5h"; // Default session token
+        this.authFailed = false;
+        const savedSSID = typeof localStorage !== 'undefined' ? localStorage.getItem('pohlor_iq_ssid') : null;
+        this.ssid = savedSSID || "9f5f3aea7d7037a7b1f118ea1932028p"; // Current valid session token
+        const savedGateway = typeof localStorage !== 'undefined' ? localStorage.getItem('pohlor_ws_gateway') : null;
+        this.gatewayUrl = savedGateway || ""; // Cloudflare Worker Gateway URL
         this.accountType = "PRACTICE"; // PRACTICE or REAL
         this.balance = 0.0;
         this.balances = [];
@@ -50,15 +54,39 @@ class IQOptionDirectClient {
         }
     }
 
-    connect(ssid, mode = "PRACTICE") {
-        if (ssid) this.ssid = ssid.trim();
+    connect(ssid, mode = "PRACTICE", gatewayUrl = null) {
+        if (ssid) {
+            this.ssid = ssid.trim();
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('pohlor_iq_ssid', this.ssid);
+            }
+        }
+        if (gatewayUrl !== null && gatewayUrl !== undefined) {
+            this.gatewayUrl = gatewayUrl.trim();
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('pohlor_ws_gateway', this.gatewayUrl);
+            }
+        }
         this.accountType = mode;
+        this.authFailed = false;
 
         if (this.ws) {
             try { this.ws.close(); } catch(e) {}
         }
 
-        const wsUrl = "wss://iqoption.com/echo/websocket";
+        let wsUrl = "wss://iqoption.com/echo/websocket";
+        if (this.gatewayUrl) {
+            let u = this.gatewayUrl;
+            if (u.startsWith("http://")) u = u.replace("http://", "ws://");
+            else if (u.startsWith("https://")) u = u.replace("https://", "wss://");
+            else if (!u.startsWith("ws://") && !u.startsWith("wss://")) u = "wss://" + u;
+            wsUrl = u;
+        } else if (typeof window !== 'undefined' && window.location && window.location.host && window.location.host.includes("workers.dev")) {
+            // Automatically use internal WebSocket Gateway on Cloudflare Workers
+            wsUrl = `wss://${window.location.host}/ws`;
+        }
+
+        console.log(`[IQ Direct] Connecting to WebSocket target: ${wsUrl}`);
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
@@ -77,6 +105,11 @@ class IQOptionDirectClient {
 
         this.ws.onclose = () => {
             this.isConnected = false;
+            if (this.authFailed) {
+                console.warn("[IQ Direct] Connection stopped due to invalid/expired SSID.");
+                if (this.onAuthStatus) this.onAuthStatus(false, "SSID ไม่ถูกต้องหรือหมดอายุ");
+                return;
+            }
             console.warn("[IQ Direct] WebSocket disconnected. Retrying in 3s...");
             if (this.onAuthStatus) this.onAuthStatus(false, "การเชื่อมต่อถูกตัด กำลังลองใหม่...");
             setTimeout(() => this.connect(this.ssid, this.accountType), 3000);
@@ -95,6 +128,7 @@ class IQOptionDirectClient {
         if (name === "profile") {
             if (msg && msg.user_id) {
                 this.isConnected = true;
+                this.authFailed = false;
                 this.userId = msg.user_id;
                 this.userName = msg.name || msg.first_name || `User ${this.userId}`;
                 this.balances = msg.balances || [];
@@ -106,6 +140,7 @@ class IQOptionDirectClient {
                 this._subscribeAll();
             } else if (msg === false) {
                 this.isConnected = false;
+                this.authFailed = true;
                 if (this.onAuthStatus) this.onAuthStatus(false, "SSID ไม่ถูกต้องหรือหมดอายุ");
             }
         } else if (name === "balances") {
