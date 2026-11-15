@@ -1,0 +1,87 @@
+/* Custom Dark Mode & Trading Styling */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+    --bg-dark: #0a0d14;
+    --card-dark: #121722;
+    --border-dark: #1f2738;
+    --accent-green: #00d084;
+    --accent-red: #ff4757;
+    --accent-yellow: #f1c40f;
+    --accent-blue: #0984e3;
+    --accent-cyan: #00cec9;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: #e2e8f0;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow-x: hidden;
+}
+
+.font-mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #0e121a;
+}
+::-webkit-scrollbar-thumb {
+    background: #252e42;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #3b4763;
+}
+
+/* Glow effects */
+.glow-green {
+    box-shadow: 0 0 20px rgba(0, 208, 132, 0.35);
+}
+
+.glow-red {
+    box-shadow: 0 0 20px rgba(255, 71, 87, 0.35);
+}
+
+.glow-gold {
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.3);
+}
+
+/* Animations */
+@keyframes pulse-subtle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.animate-pulse-subtle {
+    animation: pulse-subtle 2s infinite ease-in-out;
+}
+
+@keyframes flash-call {
+    0% { background-color: rgba(0, 208, 132, 0.4); }
+    100% { background-color: transparent; }
+}
+
+@keyframes flash-put {
+    0% { background-color: rgba(255, 71, 87, 0.4); }
+    100% { background-color: transparent; }
+}
+
+.flash-call {
+    animation: flash-call 1.5s ease-out;
+}
+
+.flash-put {
+    animation: flash-put 1.5s ease-out;
+}
+
+/* Custom modal backdrop */
+.modal-backdrop {
+    background: rgba(4, 7, 12, 0.85);
+    backdrop-filter: blur(8px);
+}

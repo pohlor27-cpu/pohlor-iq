@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IQ Option Premium SMC & pohlor (100% Serverless)</title>
+    <!-- Tailwind CSS (Local Bundle) -->
+    <script src="tailwind.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#090d16',
+                        darkCard: '#111726',
+                        darkBorder: '#1e293b',
+                        iqGreen: '#00d084',
+                        iqRed: '#ff4757',
+                        iqYellow: '#f59e0b',
+                        iqCyan: '#06b6d4',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lightweight Charts (Local Bundle) -->
+    <script src="lightweight-charts.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#090d16] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-iqGreen/30">
+
+    <!-- Top Navigation & Control Bar -->
+    <header class="bg-[#111726] border-b border-[#1e293b] sticky top-0 z-40 px-4 py-2.5 shadow-lg">
+        <div class="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-3">
+            
+            <!-- Logo & Brand -->
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-500 flex items-center justify-center shadow-md shadow-amber-500/20">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-extrabold text-base tracking-wide bg-gradient-to-r from-amber-300 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">IQ OPTION SMC</span>
+                        <span class="text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/30 font-semibold px-2 py-0.5 rounded-full">Serverless (Pure Web)</span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 font-mono">ต่อตรง IQ Option • ไม่ต้องมีเซิร์ฟเวอร์</div>
+                </div>
+            </div>
+
+            <!-- Central Controls: Balance, Amount, Countdown -->
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Account Mode & Balance -->
+                <div class="flex items-center bg-[#182032] border border-[#26334d] rounded-xl px-3 py-1.5 shadow-inner">
+                    <div class="mr-2.5">
+                        <span id="accountModeBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">PRACTICE</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">ยอดเงินคงเหลือ</span>
+                        <span id="balanceDisplay" class="font-mono text-base font-bold text-emerald-400">$0.00</span>
+                    </div>
+                    <button id="btnSwitchAccount" title="สลับโหมดบัญชี Practice / Real" class="ml-3 p-1 rounded-lg hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Order Amount (USD) -->
+                <div class="flex items-center bg-[#182032] border border-[#26334d] rounded-xl px-3 py-1.5">
+                    <span class="text-[11px] text-slate-400 font-medium mr-2">ออเดอร์:</span>
+                    <div class="flex items-center font-mono">
+                        <span class="text-slate-400 mr-1">$</span>
+                        <input id="inputOrderAmount" type="number" min="1" max="1000" value="10" class="w-14 bg-transparent text-sm font-bold text-white focus:outline-none border-b border-transparent focus:border-emerald-500 text-center">
+                    </div>
+                </div>
+
+                <!-- 1-Minute Candle Countdown Timer -->
+                <div class="flex items-center bg-[#182032] border border-[#26334d] rounded-xl px-3.5 py-1.5 shadow-inner">
+                    <div class="flex items-center space-x-2">
+                        <div class="relative flex items-center justify-center">
+                            <span class="relative flex h-2.5 w-2.5">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+                            </span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">แท่งถัดไป</span>
+                            <div class="flex items-baseline space-x-1">
+                                <span id="countdownSeconds" class="font-mono text-lg font-black text-cyan-400">59s</span>
+                                <span class="text-[10px] text-slate-500 font-mono">/ 60s</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auto-Trade Toggle -->
+                <div class="flex items-center bg-[#182032] border border-[#26334d] rounded-xl px-3 py-1.5">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggleAutoTrade" class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                        <span class="ml-2 text-xs font-semibold text-slate-300 select-none">Auto-Trade</span>
+                    </label>
+                    <span id="cooldownBadge" class="hidden ml-2 text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono">พัก 1 แท่ง</span>
+                </div>
+            </div>
+
+            <!-- Right Controls: Start/Stop Scanner, Audio & IQ Login -->
+            <div class="flex items-center space-x-2.5">
+                <!-- Sound Toggle -->
+                <button id="btnSoundToggle" title="เปิด/ปิด เสียงแจ้งเตือน" class="p-2 rounded-xl bg-[#182032] border border-[#26334d] hover:bg-slate-700/50 text-slate-300 transition">
+                    <svg id="iconSoundOn" class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                    <svg id="iconSoundOff" class="w-4 h-4 text-slate-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
+                </button>
+
+                <!-- Scan Button -->
+                <button id="btnToggleScan" class="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-md bg-emerald-600 hover:bg-emerald-500 text-white">
+                    <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                    <span id="scanButtonText">🟢 สแกน Real-time: กำลังทำงาน</span>
+                </button>
+
+                <!-- IQ Option Login / Session -->
+                <button id="btnOpenLoginModal" class="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#1f293d] to-[#283650] border border-cyan-500/40 hover:border-cyan-400 text-white transition shadow-md cursor-pointer">
+                    <span id="connectionDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400"></span>
+                    <div class="flex flex-col text-left">
+                        <span class="text-[11px] font-bold">🔑 บัญชี IQ Option</span>
+                        <span id="connectionLabel" class="text-[9px] text-amber-400 font-mono">กำลังเชื่อมต่อ...</span>
+                    </div>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Scan Status Bar -->
+    <div class="bg-[#0e1422] border-b border-[#1a2336] px-4 py-1.5">
+        <div class="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between text-xs font-mono text-slate-400 gap-2">
+            <div class="flex items-center space-x-2">
+                <span class="flex h-2 w-2 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span id="statusBarText" class="text-slate-300">กำลังเชื่อมต่อเซิร์ฟเวอร์ IQ Option WebSocket โดยตรง...</span>
+            </div>
+            <div class="flex items-center space-x-4 text-[11px]">
+                <span class="text-emerald-400">● Demand Zone (เขียว)</span>
+                <span class="text-red-400">● Supply Zone (แดง)</span>
+                <span class="text-cyan-400">--- Liquidity (LQ)</span>
+                <span class="text-amber-400">━ SMA(5)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Workspace Layout -->
+    <main class="flex-1 max-w-[1920px] w-full mx-auto p-3 grid grid-cols-12 gap-3">
+        
+        <!-- Left Panel: Pair Selector & In-Zone Watchlist & Signals (Cols 1-4) -->
+        <section class="col-span-12 lg:col-span-4 flex flex-col space-y-3">
+            
+            <!-- Currency Pair Selector & Filter -->
+            <div class="bg-[#111726] border border-[#1e293b] rounded-2xl p-3 shadow-md">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-300">คู่เงิน / สินทรัพย์</span>
+                    <div class="flex bg-[#090d16] p-0.5 rounded-lg border border-[#1e293b] text-[10px] overflow-x-auto">
+                        <button class="pair-filter-btn px-2 py-0.5 rounded-md font-semibold text-emerald-400 bg-[#182032]" data-filter="ALL">ทั้งหมด</button>
+                        <button class="pair-filter-btn px-2 py-0.5 rounded-md text-amber-400 hover:text-amber-300 font-bold" data-filter="COMMODITY">🥇 ทอง</button>
+                        <button class="pair-filter-btn px-2 py-0.5 rounded-md text-slate-400 hover:text-slate-200" data-filter="NORMAL">ปกติ</button>
+                        <button class="pair-filter-btn px-2 py-0.5 rounded-md text-slate-400 hover:text-slate-200" data-filter="OTC">OTC</button>
+                        <button class="pair-filter-btn px-2 py-0.5 rounded-md text-cyan-400 hover:text-cyan-300" data-filter="CRYPTO">₿ คริปโต</button>
+                    </div>
+                </div>
+
+                <!-- Search Input for Pairs/Assets -->
+                <div class="relative mb-2">
+                    <input id="pairSearchInput" type="text" placeholder="🔍 ค้นหาคู่เงิน / ทองคำ (XAU, EUR...)" class="w-full bg-[#090d16] border border-[#26334d] rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 font-mono transition">
+                </div>
+
+                <!-- Pairs Grid / List -->
+                <div id="pairsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-44 overflow-y-auto pr-1">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- In-Zone Watchlist -->
+            <div class="bg-[#111726] border border-[#1e293b] rounded-2xl p-3 shadow-md flex-1 flex flex-col min-h-[200px]">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-200">In-Zone Watchlist (จ่อเข้าโซน)</span>
+                    </div>
+                    <span id="inZoneCountBadge" class="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-mono">0 คู่</span>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto pr-1">
+                    <table class="w-full text-left text-xs font-mono">
+                        <thead>
+                            <tr class="text-[10px] text-slate-500 border-b border-[#1e293b]">
+                                <th class="pb-1">คู่เงิน</th>
+                                <th class="pb-1 text-center">โซน</th>
+                                <th class="pb-1 text-center">LQ กวาด</th>
+                                <th class="pb-1 text-right">กำไร</th>
+                                <th class="pb-1 text-right">เลือก</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inZoneTableBody" class="divide-y divide-[#1e293b]/50">
+                            <tr>
+                                <td colspan="5" class="py-6 text-center text-slate-500 text-[11px] font-sans">
+                                    กำลังสแกนคู่เงินตามเงื่อนไข SMC + LQ...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Live Signals Alert Feed -->
+            <div class="bg-[#111726] border border-[#1e293b] rounded-2xl p-3 shadow-md flex-1 flex flex-col min-h-[220px]">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-200">สัญญาณเทรด pohlor</span>
+                    </div>
+                    <span id="signalsCountBadge" class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono">0 สัญญาณ</span>
+                </div>
+
+                <div id="signalsFeed" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                    <div class="py-6 text-center text-slate-500 text-[11px] leading-relaxed">
+                        🟢 ระบบกำลังสแกนกราฟแบบเรียลไทม์<br>
+                        <span class="text-slate-600 text-[10px]">(จะส่งเสียงแจ้งเตือนเมื่อราคาเข้าเงื่อนไข Demand/Supply + กวาด LQ เรียบร้อย)</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Panel: Candlestick Chart & Order Execution (Cols 5-12) -->
+        <section class="col-span-12 lg:col-span-8 flex flex-col space-y-3">
+            
+            <!-- Chart Container Card -->
+            <div class="bg-[#111726] border border-[#1e293b] rounded-2xl p-3 shadow-md flex flex-col flex-1 min-h-[520px]">
+                
+                <!-- Chart Top Bar: Active Pair Info & Manual Selector -->
+                <div class="flex flex-wrap items-center justify-between pb-2 mb-2 border-b border-[#1e293b] gap-2">
+                    <div class="flex items-center space-x-3">
+                        <span id="chartPairTitle" class="text-lg font-extrabold text-white">XAU/USD (OTC) [ทองคำ]</span>
+                        <span id="chartPayoutBadge" class="text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg font-mono">Payout 93%</span>
+                        <span id="chartTfLabel" class="text-[11px] text-slate-400 font-mono">1-Minute Candles</span>
+                    </div>
+
+                    <!-- Gold-Exclusive Timeframe Switcher (10s, 1m, 15m) -->
+                    <div id="goldTimeframeSelector" class="flex items-center bg-[#090d16] border border-amber-500/50 p-0.5 rounded-xl shadow-inner">
+                        <span class="text-[10px] text-amber-400 font-bold px-2 flex items-center space-x-1 select-none">
+                            <span>⏱️ ไทม์เฟรมทอง:</span>
+                        </span>
+                        <div class="flex items-center space-x-0.5">
+                            <button class="gold-tf-btn px-2.5 py-0.5 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white" data-tf="10s">10 วิ (10s)</button>
+                            <button class="gold-tf-btn px-2.5 py-0.5 rounded-lg text-xs font-bold transition bg-amber-500/30 text-amber-300 border border-amber-500/50" data-tf="1m">1 นาที (1m)</button>
+                            <button class="gold-tf-btn px-2.5 py-0.5 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white" data-tf="15m">15 นาที (15m)</button>
+                        </div>
+                    </div>
+
+                    <!-- Manual Pair Selector Dropdown -->
+                    <div class="flex items-center space-x-2 bg-[#090d16] border border-[#26334d] px-2.5 py-1 rounded-xl shadow-inner">
+                        <span class="text-xs text-amber-400 font-bold flex items-center space-x-1 select-none">
+                            <span>📊</span>
+                            <span>เลือกกราฟเอง:</span>
+                        </span>
+                        <select id="selectManualPair" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer pr-1">
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-3 text-xs font-mono">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-slate-400">ราคา:</span>
+                            <span id="chartCurrentPrice" class="font-bold text-white text-sm">--</span>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <span class="text-slate-400">CCI(14):</span>
+                            <span id="chartCCIVal" class="font-bold text-cyan-400">0.0</span>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <span class="text-slate-400">SMA(5):</span>
+                            <span id="chartSMAVal" class="font-bold text-amber-400">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick-Pick Asset Buttons -->
+                <div class="flex flex-wrap items-center justify-between gap-1.5 pb-2 mb-2 border-b border-[#1e293b]/60 text-xs">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="text-[11px] text-slate-400 font-semibold mr-1">⚡ เลือกด่วน:</span>
+                        
+                        <button id="quickBtnGold" onclick="window.quickSelectPair('XAUUSD-OTC')" class="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/60 text-amber-300 font-bold text-xs flex items-center space-x-1.5 transition shadow-sm shadow-amber-500/20 ring-2 ring-amber-400 bg-amber-500/35 cursor-pointer">
+                            <span>🥇</span>
+                            <span>กราฟทอง (XAU/USD)</span>
+                            <span class="bg-amber-400/25 text-amber-200 text-[10px] px-1.5 py-0.2 rounded font-mono">93%</span>
+                        </button>
+
+                        <button onclick="window.quickSelectPair('XAGUSD-OTC')" class="px-2.5 py-1 rounded-lg bg-[#182032] hover:bg-slate-700 border border-[#26334d] text-slate-300 text-xs flex items-center space-x-1 transition cursor-pointer">
+                            <span>🥈</span>
+                            <span>เงิน (XAG)</span>
+                        </button>
+
+                        <button onclick="window.quickSelectPair('USOUSD-OTC')" class="px-2.5 py-1 rounded-lg bg-[#182032] hover:bg-slate-700 border border-[#26334d] text-slate-300 text-xs flex items-center space-x-1 transition cursor-pointer">
+                            <span>🛢️</span>
+                            <span>น้ำมัน (USO)</span>
+                        </button>
+
+                        <button onclick="window.quickSelectPair('EURUSD')" class="px-2.5 py-1 rounded-lg bg-[#182032] hover:bg-slate-700 border border-[#26334d] text-slate-300 text-xs transition cursor-pointer">
+                            EUR/USD
+                        </button>
+
+                        <button onclick="window.quickSelectPair('GBPUSD')" class="px-2.5 py-1 rounded-lg bg-[#182032] hover:bg-slate-700 border border-[#26334d] text-slate-300 text-xs transition cursor-pointer">
+                            GBP/USD
+                        </button>
+
+                        <button onclick="window.quickSelectPair('EURUSD-OTC')" class="px-2.5 py-1 rounded-lg bg-[#182032] hover:bg-slate-700 border border-[#26334d] text-slate-300 text-xs transition cursor-pointer">
+                            EUR/USD (OTC)
+                        </button>
+
+                        <button onclick="window.quickSelectPair('BTCUSD')" class="px-2.5 py-1 rounded-lg bg-[#182032] hover:bg-slate-700 border border-[#26334d] text-slate-300 text-xs flex items-center space-x-1 transition cursor-pointer">
+                            <span>₿</span>
+                            <span>BTC/USD</span>
+                        </button>
+                    </div>
+
+                    <div class="text-[11px] text-slate-400 font-mono">
+                        <span id="selectedAssetTypeBadge" class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">🥇 ทองคำ (Commodity)</span>
+                    </div>
+                </div>
+
+                <!-- Lightweight Chart Area -->
+                <div class="relative flex-1 w-full min-h-[420px] rounded-xl overflow-hidden bg-[#0c101c]">
+                    <div id="chartContainer" class="absolute inset-0"></div>
+                </div>
+
+            </div>
+
+            <!-- Manual Order Execution & Active Trades Bar -->
+            <div class="bg-[#111726] border border-[#1e293b] rounded-2xl p-3 shadow-md">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                    
+                    <!-- Call & Put Big Action Buttons -->
+                    <div class="md:col-span-12 grid grid-cols-2 gap-3">
+                        <button id="btnManualCall" class="group relative flex flex-col items-center justify-center py-3 px-4 rounded-xl font-bold bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-lg shadow-emerald-500/25 transition transform active:scale-95">
+                            <div class="flex items-center space-x-1.5">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                                <span class="text-base tracking-wide">CALL (ขึ้น)</span>
+                            </div>
+                            <span class="text-[11px] font-mono text-emerald-100/90 mt-0.5">หมดอายุ 1 นาที • กำไร <span id="callProfitCalc">+$9.30</span></span>
+                        </button>
+
+                        <button id="btnManualPut" class="group relative flex flex-col items-center justify-center py-3 px-4 rounded-xl font-bold bg-gradient-to-b from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-white shadow-lg shadow-rose-500/25 transition transform active:scale-95">
+                            <div class="flex items-center space-x-1.5">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                                <span class="text-base tracking-wide">PUT (ลง)</span>
+                            </div>
+                            <span class="text-[11px] font-mono text-rose-100/90 mt-0.5">หมดอายุ 1 นาที • กำไร <span id="putProfitCalc">+$9.30</span></span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Modal for SSID Session Management -->
+    <div id="loginModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-[#111726] border border-[#26334d] rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+            <button id="btnCloseModal" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                    IQ
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">จัดการการเชื่อมต่อ IQ Option</h3>
+                    <p class="text-xs text-slate-400">เชื่อมต่อผ่าน Browser WebSocket ตรง (Serverless)</p>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <div class="bg-cyan-950/20 border border-cyan-500/30 rounded-xl p-3 text-[11px] text-cyan-200 leading-relaxed">
+                    <span class="font-bold text-cyan-300">💡 เชื่อมต่อตรงโดยไม่ผ่านเซิร์ฟเวอร์คนกลาง:</span><br>
+                    ระบบเชื่อมต่อไปยัง <code>wss://iqoption.com/echo/websocket</code> โดยตรงจากเบราว์เซอร์ของคุณ ปลอดภัย ข้อมูลไม่ผ่านเซิร์ฟเวอร์ภายนอกใดๆ
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">SSID Session Token</label>
+                    <input id="inputSSID" type="text" value="43ff449f35042fbbe8b3531590df3e5h" placeholder="วางค่า ssid ที่นี่..." class="w-full bg-[#0a0d14] border border-[#26334d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
+                </div>
+
+                <div id="ssidErrorMsg" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl"></div>
+
+                <button type="button" id="btnSubmitSSID" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold text-sm shadow-lg shadow-emerald-500/20 transition">
+                    เชื่อมต่อ IQ Option โดยตรงทันที
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script Pipeline -->
+    <script src="engine.js"></script>
+    <script src="smc.js"></script>
+    <script src="trigger.js"></script>
+    <script src="iq_direct.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
